@@ -1,0 +1,11 @@
+LIBRARY AssetBundleParser
+EXPORTS
+
+set_messagehandler
+assetbundle_check
+assetbundle_size
+assetbundle_sign
+assetbundle_diff_init
+assetbundle_diff_update
+assetbundle_diff_final
+assetbundle_merge

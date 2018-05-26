@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <string.h>
 #include "Parser.h"
 #include "AssetChunk.h"
 #include "EntryItem.h"
@@ -275,7 +276,10 @@ void push_message(const char* format, ...)
 	}
 	va_list args;
 	va_start(args, format);
-	vsprintf(m_messagebuf, format, args);
+	int length = vsprintf(m_messagebuf, format, args);
+	assert(length < 4000);
+	m_messagebuf[length] = '\n';
+	m_messagebuf[length + 1] = '\0';
 	va_end(args);
 	m_messagehandler(m_messagebuf);
 }

@@ -72,6 +72,9 @@
     <ClInclude Include="AsignParser.h">
       <Filter>Source Files\asign</Filter>
     </ClInclude>
+    <ClInclude Include="cmdline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BundleFile.cpp">

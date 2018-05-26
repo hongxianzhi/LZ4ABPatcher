@@ -10,6 +10,7 @@ public:
 	virtual ~BundleFileParserForAsign();
 	static bool AsignBundle(const char* path);
 	unsigned char* Retdigest();
+	virtual bool BeginParseBundleTable(BundleFile* bundle, EndianBinaryReader* reader);
 	virtual void EndParseBundleTable(BundleFile* bundle, EndianBinaryReader* reader, int length);
 	virtual void ParseEntryBase(EntryItem* item, int index, int position, int length);
 	virtual void ParseEntryUnkonw(EntryItem* item, int index, int count, long long pathID);

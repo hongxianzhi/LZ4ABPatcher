@@ -19,49 +19,64 @@ bool BundleFileParserForAsign::AsignBundle(const char* path)
 	{
 		return false;
 	}
-
-	BundleFile* bundle = new BundleFile(EndianBinaryReader::Create(file));
-	BundleFileParserForAsign* parser = new BundleFileParserForAsign();
-	bool success = bundle->Parse(parser);
-	if (parser->m_bundleSize > 0)
+	BundleHeader header;
+	bool success = false;
+	EndianBinaryReader* reader = EndianBinaryReader::Create(file);
+	if (BundleFile::FillBundleInfoFromReader(reader, &header))
 	{
+		success = (header.bundleSize + 16 == reader->GetLength());
 		if (success == false)
 		{
-			MD5Init(&parser->m_md5ctx);
-			fseek(file, 0, SEEK_SET);
-			unsigned char chunk[64];
-			long long leftbytes = parser->m_bundleSize;
-			int readed = leftbytes > 64 ? 64 : leftbytes;
-			readed = fread(chunk, 1, readed, file);
-			while (readed > 0)
+			reader->SetPosition(0);
+			BundleFile* bundle = new BundleFile(reader);
+			BundleFileParserForAsign* parser = new BundleFileParserForAsign();
+			bool success = bundle->Parse(parser);
+			if (parser->m_bundleSize > 0)
 			{
-				MD5Update(&parser->m_md5ctx, chunk, 64);
-				leftbytes -= readed;
-				if (leftbytes <= 0)
+				if (success == false)
 				{
-					break;
+					MD5Init(&parser->m_md5ctx);
+					fseek(file, 0, SEEK_SET);
+					unsigned char chunk[64];
+					long long leftbytes = parser->m_bundleSize;
+					int readed = leftbytes > 64 ? 64 : leftbytes;
+					readed = fread(chunk, 1, readed, file);
+					while (readed > 0)
+					{
+						MD5Update(&parser->m_md5ctx, chunk, 64);
+						leftbytes -= readed;
+						if (leftbytes <= 0)
+						{
+							break;
+						}
+						readed = leftbytes > 64 ? 64 : leftbytes;
+						readed = fread(chunk, 1, readed, file);
+					}
+					MD5Final(&parser->m_md5ctx, parser->m_digest);
 				}
-				readed = leftbytes > 64 ? 64 : leftbytes;
-				readed = fread(chunk, 1, readed, file);
+
+				success = true;
+				fseek(file, parser->m_bundleSize, SEEK_SET);
+				fwrite(parser->m_digest, 1, 16, file);
+				fflush(file);
 			}
-			MD5Final(&parser->m_md5ctx, parser->m_digest);
+			SAFE_DELETE(bundle);
+			SAFE_DELETE(parser);
 		}
-
-		success = true;
-		fseek(file, parser->m_bundleSize, SEEK_SET);
-		fwrite(parser->m_digest, 1, 16, file);
-		fflush(file);
 	}
-
 	fclose(file);
-	SAFE_DELETE(bundle);
-	SAFE_DELETE(parser);
 	return success;
 }
 
 unsigned char* BundleFileParserForAsign::Retdigest()
 {
 	return m_digest;
+}
+
+bool BundleFileParserForAsign::BeginParseBundleTable(BundleFile* bundle, EndianBinaryReader* reader)
+{
+	long long bundleSize = bundle->getBundleSize();
+	return reader->GetLength() != bundleSize + 16;
 }
 
 void BundleFileParserForAsign::EndParseBundleTable(BundleFile* bundle, EndianBinaryReader* reader, int length)

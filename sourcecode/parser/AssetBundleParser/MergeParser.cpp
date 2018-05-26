@@ -1,4 +1,4 @@
-#if !defined(__APPLE__) && !defined(__ANDROID__)
+#if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(__LINUX__)
 #include <io.h>
 #include<direct.h>
 #define ACCESS(PATH, MODE) _access(PATH, MODE)
@@ -204,6 +204,7 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 		if (reader->ReadBytes(sign_data, signlen) && memcmp(sign_data, PATCH_SIGN, signlen) == 0)
 		{
 			int patchBlock = reader->ReadInt32();
+			push_message("patch block count : %d", patchBlock);
 			if (patchBlock > 0)
 			{
 				lastposition = reader->GetPosition();
@@ -219,6 +220,7 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 						handler(bundlename, index, patchBlock);
 					}
 					formatpath(merger_path, newpath, bundlename);
+					push_message("%d: type %d, merge '%s' to %s", index, bundle_patch->GetPatchType(), bundlename, merger_path);
 					switch (bundle_patch->GetPatchType())
 					{
 					case DIFFERENCE_ADD:
@@ -237,12 +239,14 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 						writer->Close();
 						SAFE_FREE(buff);
 						SAFE_DELETE(writer);
+						push_message("added '%s'", merger_path);
 					}
 					break;
 
 					case DIFFERENCE_DELETE:
 					{
 						remove(merger_path);
+						push_message("remove '%s'", merger_path);
 					}
 					break;
 
@@ -257,7 +261,7 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 							fseek(file_from, -16, SEEK_END);
 							if (fread(digest, 1, 16, file_from) != 16 || memcmp(digest, bundle_patch->m_digestold, 16) != 0)
 							{
-								push_message("assetbundle sign unmatch.");
+								push_message("'bundlename' : assetbundle sign unmatch.");
 							}
 							else
 							{
@@ -274,6 +278,7 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 									tempfile->Close();
 									SAFE_DELETE(tempfile);
 
+									SAFE_CLOSE(file_from);
 									remove(merger_path);
 									rename(path_from, merger_path);
 
@@ -285,7 +290,11 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 									push_message("create '%s' failed", path_from);
 								}
 							}
-							fclose(file_from);
+							SAFE_CLOSE(file_from);
+						}
+						else
+						{
+							push_message("can't find '%s'", path_from);
 						}
 						SAFE_FREE(path_from);
 					}
@@ -302,6 +311,10 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 				}
 				free(merger_path);
 			}
+		}
+		else
+		{
+			push_message("Invalid patch file '%s'", patch);
 		}
 		SAFE_FREE(sign_data);
 		fclose(file_patch);

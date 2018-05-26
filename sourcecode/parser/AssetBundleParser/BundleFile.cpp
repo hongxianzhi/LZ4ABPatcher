@@ -42,73 +42,13 @@ BundleFile::~BundleFile()
 
 bool BundleFile::Parse(BundleFileParser* parser)
 {
-	assert(parser != NULL && m_headerReader != NULL);
-	m_headerReader->SetPosition(0);
-	m_signature = m_headerReader->ReadStringToNull();
-	if (strcmp(m_signature.c_str(), "UnityFS"))
+	if (FillBundleInfoFromReader(m_headerReader, &m_header) == false)
 	{
-		push_message("unmatch signature %s", m_signature.c_str());
 		return false;
 	}
 
-	m_format = m_headerReader->ReadInt32();
-	if (m_format != 6)
-	{
-		assert(false);
-		push_message("unmatch version %d", m_format);
-		return false;
-	}	
-
-	m_versionPlayer = m_headerReader->ReadStringToNull();
-	m_versionEngine = m_headerReader->ReadStringToNull();
-	return ReadFormat6(parser, m_headerReader);
-}
-
-void BundleFile::PartitionChunks(std::vector<AssetChunk*>& src, std::vector<AssetChunk*>& dst, int offset, int length, int& bytes_trimed, int& bytes_compress, int& bytes_uncompress)
-{
-	dst.clear();
-	bytes_trimed = bytes_compress = bytes_uncompress = 0;
-	if (src.size() <= 0)
-	{
-		return;
-	}
-
-	int chunkset_begin = offset;
-	int chunkset_end = chunkset_begin + length;
-
-	bytes_trimed = -1;
-	int chunk_begin = 0, chunk_end = 0;
-	for (int index = 0; index < src.size(); index++)
-	{
-		AssetChunk* block = src[index];
-		chunk_end += block->GetUnCompressedSize();
-		if (chunk_end >= chunkset_begin)
-		{
-			if (chunk_begin + 1 > chunkset_end)
-			{
-				break;
-			}
-			else
-			{
-				if (bytes_trimed < 0)
-				{
-					bytes_trimed = chunk_begin;
-				}
-				bytes_compress += block->GetCompressedSize();
-				bytes_uncompress += block->GetUnCompressedSize();
-				dst.push_back(block);
-			}
-		}
-		chunk_begin = chunk_end;
-	}
-}
-
-bool BundleFile::ReadFormat6(BundleFileParser* parser, EndianBinaryReader* file_reader)
-{
 	bool success = true;
-	//[¶ÁÎÄ¼þÍ·
-	m_bundleSizePos = file_reader->GetPosition();
-	m_bundleSize = file_reader->ReadInt64();
+	EndianBinaryReader* file_reader = m_headerReader;
 	m_blockstartpos = file_reader->GetPosition();
 	m_tableCompressedSize = file_reader->ReadInt32();
 	m_tableUncompressedSize = file_reader->ReadInt32();
@@ -174,6 +114,81 @@ bool BundleFile::ReadFormat6(BundleFileParser* parser, EndianBinaryReader* file_
 	return success;
 }
 
+bool BundleFile::FillBundleInfoFromReader(EndianBinaryReader* reader, BundleHeader* header)
+{
+	if (reader == NULL || header == NULL)
+	{
+		return false;
+	}
+
+	char sign[8] = { 0 };
+	int readed = reader->ReadBytes(sign, 8);
+	if (readed <= 0)
+	{
+		return false;
+	}
+	sign[readed - 1] = 0;
+	header->signature = sign;
+
+	if (readed != 8 || memcmp(sign, "UnityFS", 8) != 0)
+	{
+		return false;
+	}
+
+	header->format = reader->ReadInt32();
+	if (header->format != 6)
+	{
+		assert(false);
+		push_message("unmatch version %d", header->format);
+		return false;
+	}
+
+	header->versionPlayer = reader->ReadStringToNull();
+	header->versionEngine = reader->ReadStringToNull();
+	header->bundleSizePos = reader->GetPosition();
+	header->bundleSize = reader->ReadInt64();
+	return true;
+}
+
+void BundleFile::PartitionChunks(std::vector<AssetChunk*>& src, std::vector<AssetChunk*>& dst, int offset, int length, int& bytes_trimed, int& bytes_compress, int& bytes_uncompress)
+{
+	dst.clear();
+	bytes_trimed = bytes_compress = bytes_uncompress = 0;
+	if (src.size() <= 0)
+	{
+		return;
+	}
+
+	int chunkset_begin = offset;
+	int chunkset_end = chunkset_begin + length;
+
+	bytes_trimed = -1;
+	int chunk_begin = 0, chunk_end = 0;
+	for (int index = 0; index < src.size(); index++)
+	{
+		AssetChunk* block = src[index];
+		chunk_end += block->GetUnCompressedSize();
+		if (chunk_end >= chunkset_begin)
+		{
+			if (chunk_begin + 1 > chunkset_end)
+			{
+				break;
+			}
+			else
+			{
+				if (bytes_trimed < 0)
+				{
+					bytes_trimed = chunk_begin;
+				}
+				bytes_compress += block->GetCompressedSize();
+				bytes_uncompress += block->GetUnCompressedSize();
+				dst.push_back(block);
+			}
+		}
+		chunk_begin = chunk_end;
+	}
+}
+
 long long assetbundle_size(const char* path)
 {
 	if (path == NULL || *path == 0)
@@ -187,21 +202,12 @@ long long assetbundle_size(const char* path)
 		return 0;
 	}
 
+	BundleHeader header;
 	long long bundleSize = 0;
 	EndianBinaryReader* reader = EndianBinaryReader::Create(file);
-	std::string signature = reader->ReadStringToNull();
-	if (memcmp(signature.c_str(), "UnityFS", 8) == 0)
+	if (BundleFile::FillBundleInfoFromReader(reader, &header))
 	{
-		if (reader->ReadInt32() == 6)
-		{
-			std::string versionPlayer = reader->ReadStringToNull();
-			std::string versionEngine = reader->ReadStringToNull();
-			bundleSize = reader->ReadInt64();
-			if (reader->GetLength() < bundleSize)
-			{
-				bundleSize = 0;
-			}
-		}
+		bundleSize = header.bundleSize;
 	}
 	SAFE_DELETE(reader);
 	fclose(file);

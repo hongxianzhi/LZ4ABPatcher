@@ -12,6 +12,7 @@ class AssetChunk;
 #define CHUNK_LENGTH (128 * 1024)
 #define SAFE_FREE(POINTER) if(POINTER != NULL){ free(POINTER); POINTER = NULL;}
 #define SAFE_DELETE(POINTER) if(POINTER != NULL){ delete(POINTER); POINTER = NULL;}
+#define SAFE_CLOSE(POINTER) if(POINTER != NULL){ fclose(POINTER); POINTER = NULL;}
 
 enum EndianType
 {

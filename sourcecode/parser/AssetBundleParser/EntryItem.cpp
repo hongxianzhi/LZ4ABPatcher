@@ -216,4 +216,5 @@ bool EntryItem::Parse(int index, BundleFileParser* parser)
 	}
 	parser->EndParseEntryPreloadData(this);
 	//]PreloadÊı¾İ¿é
+	return true;
 }

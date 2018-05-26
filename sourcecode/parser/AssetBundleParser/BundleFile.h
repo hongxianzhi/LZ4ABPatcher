@@ -9,6 +9,16 @@ class AssetChunk;
 class BundleFileParser;
 class EndianBinaryReader;
 
+struct BundleHeader
+{
+	int format;
+	std::string signature;
+	std::string versionPlayer;
+	std::string versionEngine;
+	int bundleSizePos;
+	long long bundleSize;
+};
+
 class BundleFile
 {
 public:
@@ -17,15 +27,16 @@ public:
 
 public:
 	bool Parse(BundleFileParser* parser);
+	static bool FillBundleInfoFromReader(EndianBinaryReader* reader, BundleHeader* header);
 	static void PartitionChunks(std::vector<AssetChunk*>& src, std::vector<AssetChunk*>& dst, int offset, int length, int& bytes_trimed, int& bytes_compress, int& bytes_uncompress);
 
 public:
-	std::string getSignature() { return m_signature; }
-	int getFormat() { return m_format; }
-	std::string getVersionPlayer() { return m_versionPlayer; }
-	std::string getVersionEngine() { return m_versionEngine; }
-	int getBundleSizePosition() { return m_bundleSizePos; }
-	long long getBundleSize() { return m_bundleSize; }
+	std::string getSignature() { return m_header.signature; }
+	int getFormat() { return m_header.format; }
+	std::string getVersionPlayer() { return m_header.versionPlayer; }
+	std::string getVersionEngine() { return m_header.versionEngine; }
+	int getBundleSizePosition() { return m_header.bundleSizePos; }
+	long long getBundleSize() { return m_header.bundleSize; }
 	int getCompressedSize() { return m_tableCompressedSize; }
 	int getUnCompressedSize() { return m_tableUncompressedSize; }
 	int getFlag() { return m_flag; }
@@ -36,15 +47,7 @@ public:
 	EndianBinaryReader* GetChunkReader() { return m_chunkReader; };
 
 protected:
-	bool ReadFormat6(BundleFileParser* parser, EndianBinaryReader* reader);
-
-protected:
-	std::string m_signature;
-	int m_format;
-	std::string m_versionPlayer;
-	std::string m_versionEngine;
-	int m_bundleSizePos;
-	long long m_bundleSize;
+	BundleHeader m_header;
 	int m_headerlen;
 	int m_tablelen;
 	int m_tableCompressedSize;

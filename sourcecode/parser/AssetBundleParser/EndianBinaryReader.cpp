@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include <assert.h>
+#include <string.h>
 #include "AssetChunk.h"
 #include "EndianBinaryReader.h"
 
@@ -346,6 +347,8 @@ EndianBinaryReader* EndianBinaryReaderForMemory::Clone()
 EndianBinaryReaderForChunk::EndianBinaryReaderForChunk(std::vector<AssetChunk*> chunks, int discard, int chunk_length)
 {
 	int pos = 0;
+	m_buffers[0] = m_buffers[1] = NULL;
+	m_buffer_length[0] = m_buffer_length[1] = 0;
 	m_bytes_discard = discard;
 	m_chunks_bytes_length = chunk_length;
 	m_chunks.resize(chunks.size());

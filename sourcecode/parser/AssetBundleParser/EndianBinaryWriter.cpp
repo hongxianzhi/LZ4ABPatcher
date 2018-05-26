@@ -1,4 +1,4 @@
-#include <ostream>
+#include <string.h>
 #include "EndianBinaryWriter.h"
 
 EndianBinaryWriter* EndianBinaryWriter::Create(const char* path, const char* mode)
@@ -113,7 +113,7 @@ void EndianBinaryWriter::Flush()
 
 void EndianBinaryWriter::Close()
 {
-	fclose(m_file);
+	SAFE_CLOSE(m_file);
 }
 
 EndianType EndianBinaryWriter::GetEndianType()
@@ -144,5 +144,5 @@ EndianBinaryWriter::EndianBinaryWriter(FILE* file)
 
 EndianBinaryWriter::~EndianBinaryWriter()
 {
-	fclose(m_file);
+	SAFE_CLOSE(m_file);
 }

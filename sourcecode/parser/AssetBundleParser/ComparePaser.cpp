@@ -53,7 +53,6 @@ void BundleFileParserForCompress::BuildPatchForAddFile(FILE* file_to, EndianBina
 	}
 	int patchsize = writer->GetPosition() - patchbegin;
 	writer->WriteBytes(sizepos, &patchsize, 4);
-	push_message("'%s' : %d", bundlename, patchsize);
 	free(buffer);
 }
 
@@ -125,6 +124,7 @@ void BundleFileParserForCompress::UpdatePatch(AssetBundleDiff_CTX* ctx, const ch
 	if (file_from == NULL)
 	{
 		BuildPatchForAddFile(file_to, writer, bundlename);
+		push_message("add bundle '%s', size %d", bundlename, writer->GetPosition() - ctx->bytes_writed);
 		writer->Flush();
 		ctx->bytes_writed = writer->GetPosition();
 		ctx->diff_count++;
@@ -133,8 +133,8 @@ void BundleFileParserForCompress::UpdatePatch(AssetBundleDiff_CTX* ctx, const ch
 	else if (file_to == NULL)
 	{
 		BuildPatchForDeleteFile(writer, bundlename);
-		push_message("delete bundle '%s'", bundlename);
 		writer->Flush();
+		push_message("delete bundle '%s', record size %d", bundlename, writer->GetPosition() - ctx->bytes_writed);
 		ctx->bytes_writed = writer->GetPosition();
 		ctx->diff_count++;
 		fclose(file_from);
@@ -165,7 +165,7 @@ void BundleFileParserForCompress::UpdatePatch(AssetBundleDiff_CTX* ctx, const ch
 				int read2 = fread(buff2, 1, bufflen, file_to);
 				while (read1 > 0 && read1 == read2)
 				{
-					if (memcmp(buff1, buff2, bufflen) != 0)
+					if (memcmp(buff1, buff2, read1) != 0)
 					{
 						samebundle = false;
 						break;
@@ -178,9 +178,9 @@ void BundleFileParserForCompress::UpdatePatch(AssetBundleDiff_CTX* ctx, const ch
 
 			if (samebundle == false)
 			{
-				push_message("can't compare '%s', copy binary content", bundlename);
 				BuildPatchForAddFile(file_to, writer, bundlename);
 				writer->Flush();
+				push_message("can't compare '%s', copy binary content, size %d", bundlename, writer->GetPosition() - ctx->bytes_writed);
 				ctx->bytes_writed = writer->GetPosition();
 				ctx->diff_count++;
 			}
@@ -201,6 +201,7 @@ void BundleFileParserForCompress::UpdatePatch(AssetBundleDiff_CTX* ctx, const ch
 		{
 			writer->Flush();
 			ctx->diff_count++;
+			push_message("'%s' changed, size %d", bundlename, writer->GetPosition() - ctx->bytes_writed);
 			ctx->bytes_writed = writer->GetPosition();
 		}
 		break;
@@ -321,10 +322,6 @@ bool BundleFileParserForCompress::SaveToFile(BundleFileParserForCompress* old_bu
 	}
 	patchsize = writer->GetPosition() - patchbegin;
 	writer->WriteBytes(sizepos, &patchsize, 4);
-	if (ret)
-	{
-		push_message("'%s' : %d", bundlename, patchsize);
-	}
 	return ret;
 }
 
@@ -426,7 +423,7 @@ AssetBundleDiff_CTX* assetbundle_diff_init(const char* patch)
 		FILE* file = fopen(patch, "wb+");
 		if (file != NULL)
 		{
-			push_message("open '%s' success", patch);
+			push_message("create '%s' success", patch);
 			ctx = (AssetBundleDiff_CTX*)calloc(sizeof(AssetBundleDiff_CTX), 1);
 			int len = strlen(patch) + 1;
 			ctx->path = (const char*)malloc(len);
@@ -442,7 +439,7 @@ AssetBundleDiff_CTX* assetbundle_diff_init(const char* patch)
 		}
 		else
 		{
-			push_message("open '%s' failed", patch);
+			push_message("create '%s' failed", patch);
 		}
 	}
 	return ctx;
@@ -462,18 +459,13 @@ int assetbundle_diff_final(AssetBundleDiff_CTX* ctx)
 {
 	int writed = ctx->diff_count;
 	EndianBinaryWriter* writer = (EndianBinaryWriter*)ctx->writer;
+	writer->SetPosition(ctx->diff_count_pos);
+	writer->WriteInt32(ctx->diff_count);
+	SAFE_DELETE(writer);
 	if (writed <= 0)
 	{
-		fclose(ctx->file);
 		remove(ctx->path);
 	}
-	else
-	{
-		writer->SetPosition(ctx->diff_count_pos);
-		writer->WriteInt32(ctx->diff_count);
-		fclose(ctx->file);
-	}
-	SAFE_DELETE(writer);
 	SAFE_FREE(ctx);
 	return writed;
 }

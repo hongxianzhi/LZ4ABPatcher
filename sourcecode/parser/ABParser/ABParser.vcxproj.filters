@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\asign">
+      <UniqueIdentifier>{432cb861-5577-46c2-ae22-303ddbb6ff4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\compare">
+      <UniqueIdentifier>{eff4de02-ace0-47d9-ad4d-ff71ab25dde9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\merge">
+      <UniqueIdentifier>{574a23fe-ba91-4c9b-900e-820ba5d2cc26}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../AssetBundleParser/AssetChunk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/BundleFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/EndianBinaryReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/EndianBinaryWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/EntryItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/Importer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/lz4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/lz4hc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/md5.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/AsignParser.cpp">
+      <Filter>Source Files\asign</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/ComparePaser.cpp">
+      <Filter>Source Files\compare</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/MergeParser.cpp">
+      <Filter>Source Files\merge</Filter>
+    </ClCompile>
+    <ClCompile Include="../AssetBundleParser/ABParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../AssetBundleParser/AssetChunk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/BundleFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/cmdline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/EndianBinaryReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/EndianBinaryWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/EntryItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/Importer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/lz4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/lz4hc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/lz4opt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/md5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/Parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/uthash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/AsignParser.h">
+      <Filter>Source Files\asign</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/ComparePaser.h">
+      <Filter>Source Files\compare</Filter>
+    </ClInclude>
+    <ClInclude Include="../AssetBundleParser/MergeParser.h">
+      <Filter>Source Files\merge</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="export.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

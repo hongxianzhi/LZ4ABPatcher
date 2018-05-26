@@ -168,6 +168,6 @@ void md5(const char *message, long len, char *output)
 {
 	MD5_CTX ctx;
 	MD5Init(&ctx);
-	MD5Update(&ctx, message, len);
-	MD5Final(&ctx, output);
+	MD5Update(&ctx, (unsigned char*)message, len);
+	MD5Final(&ctx, (unsigned char*)output);
 }

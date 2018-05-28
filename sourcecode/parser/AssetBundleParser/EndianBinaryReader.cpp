@@ -635,7 +635,7 @@ void EndianBinaryReaderForChunk::Ensure(int index, int length)
 		if (buf != NULL)
 		{
 			memcpy(buf_new, buf, lo);
-			free(buf);
+			SAFE_FREE(buf);
 		}
 		m_buffers[index] = buf_new;
 		m_buffer_length[index] = length;

@@ -1,4 +1,4 @@
-#if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(__LINUX__)
+#if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(__linux__)
 #include <io.h>
 #include<direct.h>
 #define ACCESS(PATH, MODE) _access(PATH, MODE)
@@ -71,7 +71,7 @@ BundlePatchFile::BundlePatchFile(EndianBinaryReader* reader)
 			else
 			{
 				assert(false /*"从patch中读取entry信息失败"*/);
-				delete patch;
+				SAFE_DELETE(patch);
 			}
 		}
 		if (m_reader->GetPosition() - patchbegin != patchsize)
@@ -195,7 +195,6 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 	if (file_patch != NULL)
 	{
 		EndianBinaryReader* reader = EndianBinaryReader::Create(file_patch);
-		reader->SetPosition(0);
 		reader->SetEndianType(LittleEndian);
 
 		int lastposition = 0;
@@ -207,6 +206,8 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 			push_message("patch block count : %d", patchBlock);
 			if (patchBlock > 0)
 			{
+				void* filebuf = NULL;
+				int filebuflen = CHUNK_LENGTH;
 				lastposition = reader->GetPosition();
 				char* merger_path = (char*)malloc(512);
 				for (int index = 0; index < patchBlock; index++)
@@ -225,19 +226,21 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 					{
 					case DIFFERENCE_ADD:
 					{
-						void* buff = malloc(CHUNK_LENGTH);
+						if (filebuf == NULL)
+						{
+							filebuf = malloc(filebuflen);
+						}
 						int position = bundle_patch->GetDataStartPosition();
 						EndianBinaryWriter* writer = EndianBinaryWriter::Create(merger_path, "wb+");
-						int len = bundle_patch->ReadBytes(buff, CHUNK_LENGTH, position);
+						int len = bundle_patch->ReadBytes(filebuf, filebuflen, position);
 						while (len > 0)
 						{
-							writer->WriteBytes(buff, len);
+							writer->WriteBytes(filebuf, len);
 							position += len;
-							len = bundle_patch->ReadBytes(buff, CHUNK_LENGTH, position);
+							len = bundle_patch->ReadBytes(filebuf, filebuflen, position);
 						}
 						writer->Flush();
 						writer->Close();
-						SAFE_FREE(buff);
 						SAFE_DELETE(writer);
 						push_message("added '%s'", merger_path);
 					}
@@ -259,35 +262,82 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 						{
 							char digest[16] = { 0 };
 							fseek(file_from, -16, SEEK_END);
-							if (fread(digest, 1, 16, file_from) != 16 || memcmp(digest, bundle_patch->m_digestold, 16) != 0)
+							if (fread(digest, 1, 16, file_from) != 16)
 							{
-								push_message("'bundlename' : assetbundle sign unmatch.");
+								push_message("load signature from '%s' failed", path_from);
 							}
 							else
 							{
-								fseek(file_from, 0, SEEK_SET);
-								sprintf(path_from, newpath[strlen(newpath) - 1] == '/' ? "%s%s.tmp" : "%s/%s.tmp", newpath, bundlename);
-								EndianBinaryWriter* tempfile = EndianBinaryWriter::Create(path_from, "wb+");
-								if (tempfile != NULL)
+								if (memcmp(digest, bundle_patch->m_digestnew, 16) == 0)
 								{
-									BundleFile* bundle_from = new BundleFile(EndianBinaryReader::Create(file_from));
-									ParserForWriteBundleHeader* parser = new ParserForWriteBundleHeader(bundle_patch, tempfile);
-									bundle_from->Parse(parser);
+									push_message("'%s' aleady patched", path_from);
+									char* p1 = merger_path;
+									char* p2 = path_from;
+									while (*p1++ == *p2++)
+									{
+										if (*p1 == 0 || *p2 == 0)
+										{
+											break;
+										}
+									}
 
-									tempfile->Flush();
-									tempfile->Close();
-									SAFE_DELETE(tempfile);
-
-									SAFE_CLOSE(file_from);
-									remove(merger_path);
-									rename(path_from, merger_path);
-
-									SAFE_DELETE(parser);
-									SAFE_DELETE(bundle_from);
+									if (*p1 != *p2)
+									{
+										EndianBinaryWriter* writer = EndianBinaryWriter::Create(merger_path, "wb+");
+										if (writer != NULL)
+										{
+											if (filebuf == NULL)
+											{
+												filebuf = malloc(filebuflen);
+											}
+											fseek(file_from, 0, SEEK_SET);
+											int len = fread(filebuf, 1, filebuflen, file_from);
+											while (len > 0)
+											{
+												writer->WriteBytes(filebuf, len);
+												len = fread(filebuf, 1, filebuflen, file_from);
+											}
+											writer->Flush();
+											writer->Close();
+											SAFE_DELETE(writer);
+											push_message("copy '%s' to '%s'", path_from, merger_path);
+										}
+										else
+										{
+											push_message("create '%s' failed", merger_path);
+										}
+									}
+								}
+								else if(memcmp(digest, bundle_patch->m_digestold, 16) != 0)
+								{
+									push_message("'%s' : assetbundle sign unmatch.", path_from);
 								}
 								else
 								{
-									push_message("create '%s' failed", path_from);
+									fseek(file_from, 0, SEEK_SET);
+									sprintf(path_from, newpath[strlen(newpath) - 1] == '/' ? "%s%s.tmp" : "%s/%s.tmp", newpath, bundlename);
+									EndianBinaryWriter* tempfile = EndianBinaryWriter::Create(path_from, "wb+");
+									if (tempfile != NULL)
+									{
+										BundleFile* bundle_from = new BundleFile(EndianBinaryReader::Create(file_from));
+										ParserForWriteBundleHeader* parser = new ParserForWriteBundleHeader(bundle_patch, tempfile);
+										bundle_from->Parse(parser);
+
+										tempfile->Flush();
+										tempfile->Close();
+										SAFE_DELETE(tempfile);
+
+										SAFE_CLOSE(file_from);
+										remove(merger_path);
+										rename(path_from, merger_path);
+
+										SAFE_DELETE(parser);
+										SAFE_DELETE(bundle_from);
+									}
+									else
+									{
+										push_message("create '%s' failed", path_from);
+									}
 								}
 							}
 							SAFE_CLOSE(file_from);
@@ -309,7 +359,8 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 
 					SAFE_DELETE(bundle_patch);
 				}
-				free(merger_path);
+				SAFE_FREE(merger_path);
+				SAFE_FREE(filebuf);
 			}
 		}
 		else
@@ -317,7 +368,8 @@ void ParserForWriteBundleHeader::MergeFormPatch(const char* patch, const char* s
 			push_message("Invalid patch file '%s'", patch);
 		}
 		SAFE_FREE(sign_data);
-		fclose(file_patch);
+		SAFE_DELETE(reader);
+		SAFE_CLOSE(file_patch);
 	}
 	else
 	{
@@ -381,6 +433,7 @@ void ParserForWriteBundleHeader::EndParseBundleInfo(BundleFile* file)
 
 BundleFileParserForEntry::BundleFileParserForEntry(ParserForWriteBundleHeader* oldbundleparser, BundlePatchFile* patcher, EndianBinaryWriter* writer)
 {
+	m_tempfile = NULL;
 	m_buffer_used = 0;
 	m_buffers[0] = m_buffers[1] = NULL;
 	m_buffer_length[0] = m_buffer_length[1] = 0;
@@ -403,7 +456,7 @@ BundleFileParserForEntry::~BundleFileParserForEntry()
 	}
 }
 
-void BundleFileParserForEntry::BeginParseChunksInfo(int count)
+void BundleFileParserForEntry::BeginParseChunksInfo(int /*count*/)
 {
 	if (m_tempfile != NULL)
 	{
@@ -480,7 +533,7 @@ void BundleFileParserForEntry::EndParseEntryPreloadInfo(EntryItem* item)
 					patch = it->second;
 				}
 			}
-			bytes = malloc(patch->length);
+			bytes = calloc(patch->length, 1);
 			readed = m_patcher->ReadBytes(bytes, patch->length, patch->position);
 		}
 
@@ -587,7 +640,7 @@ void BundleFileParserForEntry::Ensure(int index, int length)
 		if (buf != NULL)
 		{
 			memcpy(buf_new, buf, lo);
-			free(buf);
+			SAFE_FREE(buf);
 		}
 		m_buffers[index] = buf_new;
 		m_buffer_length[index] = length;

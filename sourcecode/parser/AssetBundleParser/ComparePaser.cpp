@@ -53,7 +53,7 @@ void BundleFileParserForCompress::BuildPatchForAddFile(FILE* file_to, EndianBina
 	}
 	int patchsize = writer->GetPosition() - patchbegin;
 	writer->WriteBytes(sizepos, &patchsize, 4);
-	free(buffer);
+	SAFE_FREE(buffer);
 }
 
 void BundleFileParserForCompress::BuildPatchForDeleteFile(EndianBinaryWriter* writer, const char* bundlename)
@@ -173,7 +173,7 @@ void BundleFileParserForCompress::UpdatePatch(AssetBundleDiff_CTX* ctx, const ch
 					read1 = fread(buff1, 1, bufflen, file_from);
 					read2 = fread(buff2, 1, bufflen, file_to);
 				}
-				free(buff1);
+				SAFE_FREE(buff1);
 			}
 
 			if (samebundle == false)
@@ -389,11 +389,8 @@ bool BundleFileParserForCompress::SaveToFile(EntryData* old_entry, EntryData* ne
 		if (var < 0)
 		{
 			HASH_FIND(hh, maps[1], preload_md5->md5code, 16, founded);
-			if (founded != NULL)
-			{
-				fromold = false;
-				var = founded->index;
-			}
+			fromold = false;
+			var = founded->index;
 		}
 		assert(var >= 0);
 

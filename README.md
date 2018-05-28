@@ -57,3 +57,5 @@ string newpath：合并后的文件存放目录
 MergeProgress progress：进度回调
 */
 assetbundle_merge
+
+提供了windows和linux命令行工具，可以生成补丁以及应用补丁。脚本用例 command line tool/test.sh

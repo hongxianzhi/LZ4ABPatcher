@@ -30,7 +30,7 @@ bool BundleFileParserForAsign::AsignBundle(const char* path)
 			reader->SetPosition(0);
 			BundleFile* bundle = new BundleFile(reader);
 			BundleFileParserForAsign* parser = new BundleFileParserForAsign();
-			bool success = bundle->Parse(parser);
+			success = bundle->Parse(parser);
 			if (parser->m_bundleSize > 0)
 			{
 				if (success == false)

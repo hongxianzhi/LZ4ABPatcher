@@ -28,12 +28,15 @@ public class AssetBundleModifier : EditorWindow
 		AssetBundleParser.set_messagehandler(null);
 	}
 
-	static void AsignBatch(string path)
+	public static void AsignBatch(string path)
 	{
 		List<string> files = new List<string>();
 		SelectionTools.ParseSelectionHandler handler = delegate (string file, string ext)
 		{
-			files.Add(file);
+			if(ext != "manifest")
+			{
+				files.Add(file);
+			}
 		};
 		SelectionTools.GetSelectionFileList(path, handler);
 
